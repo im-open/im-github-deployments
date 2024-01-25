@@ -1,40 +1,40 @@
-import React, { useState, useEffect } from 'react';
-import { EnvDeployment } from '../../api/types';
-import { TableContainer, Typography, makeStyles } from '@material-ui/core';
-import { Table } from '@backstage/core-components';
-import { defaultDeploymentColumns } from './columns';
-import GitHubIcon from '@material-ui/icons/GitHub';
+import React, { useState, useEffect } from 'react'
+import { EnvDeployment } from '../../api/types'
+import { TableContainer, Typography, makeStyles } from '@material-ui/core'
+import { Table } from '@backstage/core-components'
+import { defaultDeploymentColumns } from './columns'
+import GitHubIcon from '@material-ui/icons/GitHub'
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   empty: {
     padding: theme.spacing(2),
     display: 'flex',
     justifyContent: 'center',
   },
-}));
+}))
 
 /** @public */
 export const EnvironmentDeployments = (props: {
-  environment: string;
-  loading: boolean;
-  currentDeployments: EnvDeployment[];
-  projectSlug: string;
+  environment: string
+  loading: boolean
+  currentDeployments: EnvDeployment[]
+  projectSlug: string
 }) => {
   const [currentDeployments, setCurrentDeployments] = useState<EnvDeployment[]>(
-    [],
-  );
-  const classes = useStyles();
+    []
+  )
+  const classes = useStyles()
 
   useEffect(() => {
     if (!props.loading) {
-      setCurrentDeployments(props.currentDeployments);
+      setCurrentDeployments(props.currentDeployments)
     }
-  }, [props.loading, props.currentDeployments]);
+  }, [props.loading, props.currentDeployments])
 
   for (let i in currentDeployments) {
-    (currentDeployments[i] as any).projectSlug = props.projectSlug;
+    ;(currentDeployments[i] as any).projectSlug = props.projectSlug
   }
-  currentDeployments.sort((a, b) => (a.id < b.id ? 1 : -1));
+  currentDeployments.sort((a, b) => (a.id < b.id ? 1 : -1))
   const display = (
     <TableContainer>
       <Table
@@ -65,17 +65,18 @@ export const EnvironmentDeployments = (props: {
             icon: () => <GitHubIcon />,
             tooltip: 'Environment Deployments',
             isFreeAction: true,
+            disabled: props.environment.toLowerCase() == 'any',
             onClick: () => {
               window.open(
                 `https://github.com/${props.projectSlug}/deployments/${props.environment}`,
-                '_blank',
-              );
+                '_blank'
+              )
             },
           },
         ]}
       />
     </TableContainer>
-  );
+  )
 
-  return <>{display}</>;
-};
+  return <>{display}</>
+}
