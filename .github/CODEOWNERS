@@ -12,4 +12,4 @@
   # Draft PRs do not automatically request reviews until they are marked as Ready for Review.
   # If the repo's Branch Protection Rule requires code owner reviews, one of these team members
   # must sign off before a PR can be merged.
-  * @im-practices/swat
+  * @im-open/swat
