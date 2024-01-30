@@ -1,14 +1,14 @@
 # IM GitHub Deployments Dashboard for Backstage
 
 ## What is the IM GitHub Deployments Dashboard
-The IM GitHub Deployments Dashboard plugin works in conjunction with the [im-open/create-github-deployment] GitHub workflow action to create and track GitHub [deployments] and [deployment statuses].
 
+The IM GitHub Deployments Dashboard plugin works in conjunction with the [im-open/create-github-deployment] GitHub workflow action to create and track GitHub [deployments] and [deployment statuses].
 
 ## Getting started
 
 ### Update `catalog-info.yaml`
 
-####  1. `github.com/project-slug` - REQUIRED
+#### 1. `github.com/project-slug` - REQUIRED
 
 The `catalog-info.yaml` file will need to be updated so that the `metadata.annotations` section contains a value for `github.com/project-slug`. The project slug is the GitHub owner and repository name separated by a forward slash, i.e., `im-open/im-github-deployments`.
 
@@ -33,10 +33,10 @@ metadata:
   name: im-github-deployemnts
   ...
   deployment-environments:
-  	- Dev
-  	- QA
-  	- Stage
-  	- Prod
+    - Dev
+    - QA
+    - Stage
+    - Prod
   annotations:
     github.com/project-slug: im-open/im-github-deployments
 ```
@@ -123,8 +123,8 @@ After the deployment job, an `update-the-deployment-board` job can report back t
 ```yaml
 name: Project Deployment
 on:
-	workflow_dispatch:
-		inputs:
+  workflow_dispatch:
+    inputs:
       tag:
         description: The tag to deploy
         type: string
@@ -149,15 +149,15 @@ on:
           - Secondary-slot2
 
 jobs:
-	deploy-the-project:
-	  outputs:
-	  	deployment_conclusion: ${{ steps.deployment.output.conclusion }}
-		...
+  deploy-the-project:
+    outputs:
+      deployment_conclusion: ${{ steps.deployment.output.conclusion }}
+  ...
 
-	update-the-deployment-board:
-		needs: [deploy-the-project]
-		steps:
-			- name: Create GitHub Deployment
+  update-the-deployment-board:
+  needs: [deploy-the-project]
+  steps:
+  - name: Create GitHub Deployment
         id: create-deployment
         uses: im-open/create-github-deployment@v1
         with:
@@ -169,7 +169,7 @@ jobs:
           entity: im-github-deployments
           instance: ${{ input.instance }}
 
-			...
+  ...
 ```
 
 <!-- links -->
