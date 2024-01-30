@@ -155,9 +155,9 @@ jobs:
   ...
 
   update-the-deployment-board:
-  needs: [deploy-the-project]
-  steps:
-  - name: Create GitHub Deployment
+    needs: [deploy-the-project]
+    steps:
+    - name: Create GitHub Deployment
         id: create-deployment
         uses: im-open/create-github-deployment@v1
         with:
