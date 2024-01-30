@@ -10,7 +10,7 @@ The IM GitHub Deployments Dashboard plugin works in conjunction with the [im-ope
 
 ####  1. `github.com/project-slug` - REQUIRED
 
-The `catalog-info.yaml` file will need to be updated so that the `metadata.annotations` section contains a value for `github.com/project-slug`. The project slug is essentially concatenation of the GitHub owner and repository name separated by a forward slash, i.e., `im-open/im-github-deployments`.
+The `catalog-info.yaml` file will need to be updated so that the `metadata.annotations` section contains a value for `github.com/project-slug`. The project slug is the GitHub owner and repository name separated by a forward slash, i.e., `im-open/im-github-deployments`.
 
 ```yaml
 apiVersion: backstage.io/v1alpha1
@@ -24,7 +24,7 @@ metadata:
 
 #### 2. `deployment-environments` - OPTIONAL, but recommended
 
-Adding the `metadata.deployment-environments` list allows the dashboard to be pre-populated with the expected deployment environments, and order their appearance in the dashboard.  Otherwise, the deployment environments will be ordered by how they were deployed and may not full reflect the project deployment lifecycle.
+Adding the `metadata.deployment-environments` list allows the dashboard to be pre-populated with the expected deployment environments, and order their appearance in the dashboard.  Otherwise, the deployment environments will be ordered by how they were deployed and may not fully reflect the project deployment lifecycle.
 
 ```yaml
 apiVersion: backstage.io/v1alpha1
@@ -110,7 +110,7 @@ The example adds the `import` statement and adds the `IMGitHubDeploymentDashboar
 
 #### 3. Authentication
 
-The `im-github-dashboard` plugin relies on GitHub authentication.  The user must have a GitHub login and access to the org and repo that is being represented in Backstage Catalog.
+The `im-github-deployments` plugin relies on GitHub authentication.  The user must have a GitHub login and access to the repository identified in the entity's `project-slug` annotation.
 
 ![GitHub Authentication](images/github_auth.png)
 
@@ -166,9 +166,8 @@ jobs:
           environment: ${{ input.environment }}
           release-ref: ${{ input.tag }}
           deployment-status: ${{ deploy-the-project.outputs.deployment_conclusion }}
-          entity: im-github-dashboard
+          entity: im-github-deployments
           instance: ${{ input.instance }}
-          workflow-run-url: '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
 
 			...
 ```
