@@ -148,6 +148,10 @@ on:
           - Secondary-slot1
           - Secondary-slot2
 
+permissions:
+  # needed to create github deployments entries
+  deployments: write
+
 jobs:
   deploy-the-project:
     outputs:
