@@ -1,45 +1,45 @@
-import React, { useState } from 'react'
-import { useEntity } from '@backstage/plugin-catalog-react'
-import useAsyncRetry from 'react-use/lib/useAsyncRetry'
+import React, { useState } from 'react';
+import { useEntity } from '@backstage/plugin-catalog-react';
+import useAsyncRetry from 'react-use/lib/useAsyncRetry';
 import {
   RestDeployment,
   RestDeploymentStatus,
   EnvState,
   EnvDeployment,
   CurrentEnvStates,
-} from '../../api/types'
-import { githubDeploymentsApiRef } from '../../api'
-import { CurrentEnvironmentDeployments } from '../CurrentEnvironmentDeployments/CurrentEnvironmentDeployments'
-import { EnvironmentDeployments } from '../EnvironmentDeployments/EnvironmentDeployments'
-import { ResponseErrorPanel } from '@backstage/core-components'
-import { useApi } from '@backstage/core-plugin-api'
-import { Grid } from '@material-ui/core'
+} from '../../api/types';
+import { githubDeploymentsApiRef } from '../../api';
+import { CurrentEnvironmentDeployments } from '../CurrentEnvironmentDeployments/CurrentEnvironmentDeployments';
+import { EnvironmentDeployments } from '../EnvironmentDeployments/EnvironmentDeployments';
+import { ResponseErrorPanel } from '@backstage/core-components';
+import { useApi } from '@backstage/core-plugin-api';
+import { Grid } from '@material-ui/core';
 
 export const GitHubDeploymentsComponents = (props: {
-  projectSlug: string
-  last: number
-  host: string | undefined
+  projectSlug: string;
+  last: number;
+  host: string | undefined;
 }) => {
-  const { projectSlug, last, host } = props
-  const entity = useEntity().entity
+  const { projectSlug, last, host } = props;
+  const entity = useEntity().entity;
 
-  const [displayEnvironment, setDisplayEnvironment] = useState('DEV')
-  const [owner, repo] = projectSlug.split('/')
-  const api = useApi(githubDeploymentsApiRef)
+  const [displayEnvironment, setDisplayEnvironment] = useState('DEV');
+  const [owner, repo] = projectSlug.split('/');
+  const api = useApi(githubDeploymentsApiRef);
 
-  let environmentIndexList: { [key: string]: string }
+  let environmentIndexList: { [key: string]: string };
   const getKeyFromList = (value: string, list: string[] | undefined) => {
     if (list != undefined && list.length > 0) {
       if (!environmentIndexList) {
         environmentIndexList = Object.fromEntries(
-          list.map((e) => [e.toLowerCase(), e])
-        )
+          list.map(e => [e.toLowerCase(), e]),
+        );
       }
-      return environmentIndexList[value.toLowerCase()]
+      return environmentIndexList[value.toLowerCase()];
     } else {
-      return value.toLowerCase()
+      return value.toLowerCase();
     }
-  }
+  };
 
   const {
     error,
@@ -49,39 +49,39 @@ export const GitHubDeploymentsComponents = (props: {
   } = useAsyncRetry(async () => {
     const catalogEnvironments = entity.metadata[
       'deployment-environments'
-    ] as string[]
-    const apiEnvStates: CurrentEnvStates = {}
-    const apiEnvironments = [] as string[]
-    const apiDeployments: EnvDeployment[] = []
+    ] as string[];
+    const apiEnvStates: CurrentEnvStates = {};
+    const apiEnvironments = [] as string[];
+    const apiDeployments: EnvDeployment[] = [];
     const ghDeployments: RestDeployment[] = await api.listDeployments({
       host,
       owner,
       repo,
       entity: entity.metadata.name,
       last,
-    })
+    });
 
-    const apiAllEnvStates: EnvState[] = []
-    const apiStatuses: RestDeploymentStatus[] = []
+    const apiAllEnvStates: EnvState[] = [];
+    const apiStatuses: RestDeploymentStatus[] = [];
     const apiDeploymentStatuses = await api.listAllDeploymentStatuses({
-      deploymentNodeIds: ghDeployments.map((d) => d.node_id),
-    })
+      deploymentNodeIds: ghDeployments.map(d => d.node_id),
+    });
 
     for (let i in apiDeploymentStatuses) {
-      const status = apiDeploymentStatuses[i]
+      const status = apiDeploymentStatuses[i];
       const env = getKeyFromList(
         status.environment.replace('*', ''),
-        catalogEnvironments
-      ) //Need to figure out where *'s are coming from
+        catalogEnvironments,
+      ); //Need to figure out where *'s are coming from
       const deployment = ghDeployments.filter(
-        (d) => d.node_id == status.deployment_node_id
-      )[0]
+        d => d.node_id == status.deployment_node_id,
+      )[0];
 
-      const statusKey = `${env}-${deployment.payload?.instance}`
+      const statusKey = `${env}-${deployment.payload?.instance}`;
 
       if (apiEnvStates[env] == undefined) {
-        apiEnvironments.push(env)
-        apiEnvStates[env] = {}
+        apiEnvironments.push(env);
+        apiEnvStates[env] = {};
       }
       if (apiEnvStates[env][statusKey] == undefined) {
         const addEnvState = {
@@ -91,31 +91,31 @@ export const GitHubDeploymentsComponents = (props: {
           status: status.state,
           created_at: status.created_at,
           createdHuman: status.createdHuman,
-        }
-        apiEnvStates[env][statusKey] = addEnvState
-        apiAllEnvStates.push(addEnvState)
+        };
+        apiEnvStates[env][statusKey] = addEnvState;
+        apiAllEnvStates.push(addEnvState);
       }
 
       apiDeployments.push({
         ...deployment,
         state: status.state,
-      } as EnvDeployment)
+      } as EnvDeployment);
     }
     const results = {
       environments: catalogEnvironments || apiEnvironments,
       deployments: apiDeployments,
       statuses: apiStatuses,
       states: apiEnvStates,
-    }
+    };
 
-    return results
-  })
+    return results;
+  });
 
   if (error) {
-    return <ResponseErrorPanel error={error} />
+    return <ResponseErrorPanel error={error} />;
   }
 
-  const noDeployments = value?.deployments.length == 0
+  const noDeployments = value?.deployments.length == 0;
 
   return (
     <Grid container spacing={3} alignItems="stretch">
@@ -135,12 +135,12 @@ export const GitHubDeploymentsComponents = (props: {
           loading={loading}
           currentDeployments={
             value?.deployments.filter(
-              (d) =>
-                d.environment.toLowerCase() == displayEnvironment.toLowerCase()
+              d =>
+                d.environment.toLowerCase() == displayEnvironment.toLowerCase(),
             ) || []
           }
         />
       </Grid>
     </Grid>
-  )
-}
+  );
+};
