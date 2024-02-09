@@ -38,7 +38,12 @@ export const EnvironmentDeployments = (props: {
   const display = (
     <TableContainer>
       <Table
-        title={'Deployments: ' + props.environment}
+        title={
+          `Environment Deployments` +
+          (props.environment.toLowerCase() == 'any'
+            ? ''
+            : ': ' + props.environment)
+        }
         columns={defaultDeploymentColumns}
         options={{
           header: true,
@@ -65,7 +70,7 @@ export const EnvironmentDeployments = (props: {
             icon: () => <GitHubIcon />,
             tooltip: 'Environment Deployments',
             isFreeAction: true,
-            disabled: props.environment.toLowerCase() == 'any',
+            disabled: props.loading || props.environment.toLowerCase() == 'any',
             onClick: () => {
               window.open(
                 `https://github.com/${props.projectSlug}/deployments/${props.environment}`,
