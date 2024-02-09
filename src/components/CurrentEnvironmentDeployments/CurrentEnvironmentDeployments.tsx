@@ -119,7 +119,7 @@ export const CurrentEnvironmentDeployments = (props: {
 
   const deploymentDisplay = (
     <InfoCard
-      title="Environments"
+      title="Current Environments"
       action={
         <Button
           onClick={() => reloadDashboard()}

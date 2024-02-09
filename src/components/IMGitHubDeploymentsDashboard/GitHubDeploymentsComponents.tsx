@@ -37,7 +37,7 @@ export const GitHubDeploymentsComponents = (props: {
       }
       return environmentIndexList[value.toLowerCase()];
     } else {
-      return value;
+      return value.toLowerCase();
     }
   };
 
@@ -135,7 +135,8 @@ export const GitHubDeploymentsComponents = (props: {
           loading={loading}
           currentDeployments={
             value?.deployments.filter(
-              d => d.environment.toUpperCase() == displayEnvironment,
+              d =>
+                d.environment.toLowerCase() == displayEnvironment.toLowerCase(),
             ) || []
           }
         />
