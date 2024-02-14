@@ -115,6 +115,9 @@ export const GitHubDeploymentsComponents = (props: {
     return <ResponseErrorPanel error={error} />;
   }
 
+  if ((value?.environments || []).length > 0) {
+    setDisplayEnvironment(value?.environments[0] as string);
+  }
   const noDeployments = value?.deployments.length == 0;
 
   return (
