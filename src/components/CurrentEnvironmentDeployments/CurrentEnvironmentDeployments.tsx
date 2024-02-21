@@ -3,6 +3,7 @@ import { CurrentEnvStates } from '../../api/types';
 import { Button, Grid, GridSize } from '@material-ui/core';
 import { InfoCard } from '@backstage/core-components';
 import SyncIcon from '@material-ui/icons/Sync';
+import { EnvironmentDeploymentCard } from './EnvironmentDeploymentCard';
 
 /** @public */
 export const CurrentEnvironmentDeployments = (props: {
@@ -23,6 +24,8 @@ export const CurrentEnvironmentDeployments = (props: {
     if (!props.loading) {
       setEnvironments(props.environments);
       setEnvStates(props.currentEnvStates);
+      setEnvironment(props.environments[0]);
+      setDisplayEnvironment(props.environments[0]);
     }
   }, [props.loading, props.currentEnvStates]);
 
@@ -45,11 +48,14 @@ export const CurrentEnvironmentDeployments = (props: {
       ) : (
         <>
           {Object.keys(envStates[env])
-            .map(
-              key =>
-                `${envStates[env][key].instance}: ${envStates[env][key].ref} - ${envStates[env][key].status} (${envStates[env][key].createdHuman})`,
+            .map(key => (
+              <EnvironmentDeploymentCard envState={envStates[env][key]} />
+            ))
+            .sort((a, b) =>
+              a.props.envState.databaseId < b.props.envState.databaseId
+                ? -1
+                : 1,
             )
-            .sort((a, b) => (a < b ? -1 : 1))
             .map(deployment => (
               <>
                 {deployment}

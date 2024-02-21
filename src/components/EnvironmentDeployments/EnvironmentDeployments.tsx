@@ -31,9 +31,6 @@ export const EnvironmentDeployments = (props: {
     }
   }, [props.loading, props.currentDeployments]);
 
-  for (let i in currentDeployments) {
-    (currentDeployments[i] as any).projectSlug = props.projectSlug;
-  }
   currentDeployments.sort((a, b) => (a.id < b.id ? 1 : -1));
   const display = (
     <TableContainer>

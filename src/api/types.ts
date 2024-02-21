@@ -54,13 +54,14 @@ export type GraphQlDeployment = {
         description: string;
         state: string;
         createdAt: string;
-      }
+      },
     ];
   };
 };
 
 /** @public */
 export type EnvState = {
+  databaseId: number;
   environment: string;
   instance: string;
   ref: string;

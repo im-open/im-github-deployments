@@ -10,7 +10,7 @@ import {
 } from '../../api/types';
 import { githubDeploymentsApiRef } from '../../api';
 import { CurrentEnvironmentDeployments } from '../CurrentEnvironmentDeployments/CurrentEnvironmentDeployments';
-import { EnvironmentDeployments } from '../EnvironmentDeployments/EnvironmentDeployments';
+import { EnvironmentDeployments } from '../Deployments/Deployments';
 import { ResponseErrorPanel } from '@backstage/core-components';
 import { useApi } from '@backstage/core-plugin-api';
 import { Grid } from '@material-ui/core';
@@ -67,8 +67,7 @@ export const GitHubDeploymentsComponents = (props: {
       deploymentNodeIds: ghDeployments.map(d => d.node_id),
     });
 
-    for (let i in apiDeploymentStatuses) {
-      const status = apiDeploymentStatuses[i];
+    for (var status of apiDeploymentStatuses) {
       const env = getKeyFromList(
         status.environment.replace('*', ''),
         catalogEnvironments,
@@ -85,6 +84,7 @@ export const GitHubDeploymentsComponents = (props: {
       }
       if (apiEnvStates[env][statusKey] == undefined) {
         const addEnvState = {
+          databaseId: deployment.id,
           environment: env,
           instance: deployment.payload?.instance,
           ref: status.ref,
@@ -99,6 +99,7 @@ export const GitHubDeploymentsComponents = (props: {
       apiDeployments.push({
         ...deployment,
         state: status.state,
+        proprojectSlug: projectSlug,
       } as EnvDeployment);
     }
     const results = {
@@ -115,9 +116,6 @@ export const GitHubDeploymentsComponents = (props: {
     return <ResponseErrorPanel error={error} />;
   }
 
-  if ((value?.environments || []).length > 0) {
-    setDisplayEnvironment(value?.environments[0] as string);
-  }
   const noDeployments = value?.deployments.length == 0;
 
   return (
