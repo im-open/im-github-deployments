@@ -140,7 +140,7 @@ export const columns: GridColDef[] = [
         <Tooltip title={params.row.createdHuman}>
           <Typography variant="body1">
             {DateTime.fromISO(params.row.created_at).toFormat(
-              'MM/dd/yyyy hh:mm a',
+              'MM/dd/yy hh:mm a',
             )}
           </Typography>
         </Tooltip>
