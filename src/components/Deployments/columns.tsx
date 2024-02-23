@@ -101,7 +101,7 @@ export const columns: GridColDef[] = [
   },
   {
     ...columnWithValueAndLinkDef(
-      'environment',
+      'displayEnvironment',
       'Environment',
       'string',
       150,
