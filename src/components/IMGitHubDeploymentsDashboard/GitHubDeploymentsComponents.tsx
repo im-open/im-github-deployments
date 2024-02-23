@@ -1,16 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useEntity } from '@backstage/plugin-catalog-react';
 import useAsyncRetry from 'react-use/lib/useAsyncRetry';
-import {
-  RestDeployment,
-  RestDeploymentStatus,
-  EnvState,
-  EnvDeployment,
-  CurrentEnvStates,
-} from '../../api/types';
+import { RestDeployment, EnvDeployment } from '../../api/types';
 import { githubDeploymentsApiRef } from '../../api';
-import { CurrentEnvironmentDeployments } from '../CurrentEnvironmentDeployments/CurrentEnvironmentDeployments';
-import { EnvironmentDeployments } from '../Deployments/Deployments';
+import { Deployments } from '../Deployments/Deployments';
 import { ResponseErrorPanel } from '@backstage/core-components';
 import { useApi } from '@backstage/core-plugin-api';
 import { Grid } from '@material-ui/core';
@@ -22,8 +15,6 @@ export const GitHubDeploymentsComponents = (props: {
 }) => {
   const { projectSlug, last, host } = props;
   const entity = useEntity().entity;
-
-  const [displayEnvironment, setDisplayEnvironment] = useState('DEV');
   const [owner, repo] = projectSlug.split('/');
   const api = useApi(githubDeploymentsApiRef);
 
@@ -37,7 +28,7 @@ export const GitHubDeploymentsComponents = (props: {
       }
       return environmentIndexList[value.toLowerCase()];
     } else {
-      return value.toLowerCase();
+      return value;
     }
   };
 
@@ -50,8 +41,6 @@ export const GitHubDeploymentsComponents = (props: {
     const catalogEnvironments = entity.metadata[
       'deployment-environments'
     ] as string[];
-    const apiEnvStates: CurrentEnvStates = {};
-    const apiEnvironments = [] as string[];
     const apiDeployments: EnvDeployment[] = [];
     const ghDeployments: RestDeployment[] = await api.listDeployments({
       host,
@@ -61,85 +50,42 @@ export const GitHubDeploymentsComponents = (props: {
       last,
     });
 
-    const apiAllEnvStates: EnvState[] = [];
-    const apiStatuses: RestDeploymentStatus[] = [];
     const apiDeploymentStatuses = await api.listAllDeploymentStatuses({
       deploymentNodeIds: ghDeployments.map(d => d.node_id),
     });
 
     for (var status of apiDeploymentStatuses) {
-      const env = getKeyFromList(
-        status.environment.replace('*', ''),
-        catalogEnvironments,
-      ); //Need to figure out where *'s are coming from
+      const statusEnvionment = status.environment.replace('*', ''); // TODO: Need to figure out where *'s are coming from
+      const env = getKeyFromList(statusEnvionment, catalogEnvironments);
       const deployment = ghDeployments.filter(
         d => d.node_id == status.deployment_node_id,
       )[0];
 
-      const statusKey = `${env}-${deployment.payload?.instance}`;
-
-      if (apiEnvStates[env] == undefined) {
-        apiEnvironments.push(env);
-        apiEnvStates[env] = {};
-      }
-      if (apiEnvStates[env][statusKey] == undefined) {
-        const addEnvState = {
-          databaseId: deployment.id,
-          environment: env,
-          instance: deployment.payload?.instance,
-          ref: status.ref,
-          status: status.state,
-          created_at: status.created_at,
-          createdHuman: status.createdHuman,
-        };
-        apiEnvStates[env][statusKey] = addEnvState;
-        apiAllEnvStates.push(addEnvState);
-      }
-
       apiDeployments.push({
         ...deployment,
+        displayEnvironment: env,
         state: status.state,
         proprojectSlug: projectSlug,
       } as EnvDeployment);
     }
-    const results = {
-      environments: catalogEnvironments || apiEnvironments,
-      deployments: apiDeployments,
-      statuses: apiStatuses,
-      states: apiEnvStates,
-    };
 
-    return results;
+    apiDeployments.sort((a, b) => (a.id < b.id ? 1 : -1));
+
+    return apiDeployments;
   });
 
   if (error) {
     return <ResponseErrorPanel error={error} />;
   }
 
-  const noDeployments = value?.deployments.length == 0;
-
   return (
     <Grid container spacing={3} alignItems="stretch">
       <Grid item sm={12} md={12} lg={12}>
-        <CurrentEnvironmentDeployments
-          loading={loading}
-          environments={value?.environments || []}
-          currentEnvStates={value?.states || undefined}
-          setDisplayEnvironment={setDisplayEnvironment}
-          reloadDashboard={reload}
-        />
-      </Grid>
-      <Grid item sm={12} md={12} lg={12}>
-        <EnvironmentDeployments
-          environment={noDeployments ? 'Any' : displayEnvironment}
+        <Deployments
           projectSlug={projectSlug}
           loading={loading}
-          currentDeployments={
-            value?.deployments.filter(
-              d =>
-                d.environment.toLowerCase() == displayEnvironment.toLowerCase(),
-            ) || []
-          }
+          deployments={value || []}
+          reloadDashboard={reload}
         />
       </Grid>
     </Grid>
