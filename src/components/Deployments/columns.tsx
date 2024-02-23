@@ -2,10 +2,9 @@ import React, { CSSProperties } from 'react';
 import {
   GridColDef,
   GridValueGetterParams,
-  GridValueFormatterParams,
   GridRenderCellParams,
 } from '@mui/x-data-grid';
-import { Button, Link, Typography } from '@material-ui/core';
+import { Button, Link, Tooltip, Typography } from '@material-ui/core';
 import { DateTime } from 'ts-luxon';
 
 const buttonStyle = { height: '15ox', textTransform: 'none' } as CSSProperties;
@@ -136,9 +135,16 @@ export const columns: GridColDef[] = [
   },
   {
     ...columnDef('created_at', 'Deployed', 'string', 200, false),
-    valueFormatter: (params: GridValueFormatterParams<string>) =>
-      params.value &&
-      DateTime.fromISO(params.value).toFormat('MM/dd/yyyy hh:mm a'),
+    renderCell: (params: GridRenderCellParams) =>
+      params.row.created_at && (
+        <Tooltip title={params.row.createdHuman}>
+          <Typography variant="body1">
+            {DateTime.fromISO(params.row.created_at).toFormat(
+              'MM/dd/yyyy hh:mm a',
+            )}
+          </Typography>
+        </Tooltip>
+      ),
   },
   {
     ...columnWithValueAndLinkDef(
