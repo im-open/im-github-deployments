@@ -3,7 +3,7 @@ import { useEntity } from '@backstage/plugin-catalog-react';
 import useAsyncRetry from 'react-use/lib/useAsyncRetry';
 import { RestDeployment, EnvDeployment } from '../../api/types';
 import { githubDeploymentsApiRef } from '../../api';
-import { Deployments } from '../Deployments/Deployments';
+import { TableDeployments as Deployments } from '../Deployments/TableDeployments';
 import { ResponseErrorPanel } from '@backstage/core-components';
 import { useApi } from '@backstage/core-plugin-api';
 import { Grid } from '@material-ui/core';

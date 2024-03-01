@@ -6,6 +6,7 @@ import {
 } from '@mui/x-data-grid';
 import { Button, Link, Tooltip, Typography } from '@material-ui/core';
 import { DateTime } from 'ts-luxon';
+import CheckIcon from '@material-ui/icons/Check';
 
 const buttonStyle = { height: '15ox', textTransform: 'none' } as CSSProperties;
 
@@ -52,7 +53,6 @@ const columnDef = (
   ({
     field: field,
     headerName: header,
-    headerAlign: 'center',
     type: type,
     sortable: true,
     filterable: true,
@@ -96,8 +96,11 @@ const columnWithValueAndLinkDef = (
 export const columns: GridColDef[] = [
   {
     ...columnDef('current', 'Current', 'boolean', 120, false),
+    renderCell: (params: GridRenderCellParams) =>
+      params.row.state.toLowerCase() == 'success' ? <CheckIcon /> : '',
     valueGetter: (params: GridValueGetterParams) =>
       params.row.state.toLowerCase() == 'success',
+    sortComparator: (a: boolean, b: boolean) => (a == b ? 0 : a ? -1 : 1),
   },
   {
     ...columnWithValueAndLinkDef(
