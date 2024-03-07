@@ -26,6 +26,7 @@ export type RestDeployment = {
 
 /** @public */
 export type EnvDeployment = RestDeployment & {
+  [key: string]: any;
   state: string;
 };
 

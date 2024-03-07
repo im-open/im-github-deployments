@@ -43,6 +43,8 @@ const renderLink = (
   );
 };
 
+export const columnHeaderClass = 'deployments-header';
+
 const columnDef = (
   field: string,
   header: string,
@@ -51,6 +53,7 @@ const columnDef = (
   flex: boolean,
 ) =>
   ({
+    headerClassName: columnHeaderClass,
     field: field,
     headerName: header,
     type: type,
