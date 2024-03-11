@@ -53,3 +53,6 @@ published_app
 *.orig
 packages/backend/techhub-env-secrets-full.sh
 packages/backend/techhub-env-secrets.sh
+
+# npm zip packages
+im-open-im-github-deployments-v*.tgz
