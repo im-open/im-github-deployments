@@ -5,7 +5,6 @@ import { Button, Grid /*, Portal*/ } from '@material-ui/core';
 import {
   DataGrid,
   GridToolbarContainer,
-  GridToolbarColumnsButton,
   GridToolbarFilterButton,
   GridToolbarQuickFilter,
   gridClasses,
@@ -34,15 +33,8 @@ export const Deployments = (props: {
   const deploymentsToolbar = (props: any) => (
     <GridToolbarContainer {...props} sx={{ width: '100%', display: 'inline' }}>
       <div style={{ width: '50%', float: 'left' }}>
-        <GridToolbarColumnsButton
-          style={{
-            color: theme.palette.mode === 'dark' ? 'white' : 'primary',
-          }}
-        />
         <GridToolbarFilterButton
-          style={{
-            color: theme.palette.mode === 'dark' ? 'white' : 'primary',
-          }}
+          color={theme.palette.mode === 'dark' ? 'secondary' : 'primary'}
         />
       </div>
       <div style={{ float: 'right', width: '50%', textAlign: 'right' }}>
@@ -94,11 +86,6 @@ export const Deployments = (props: {
                 columns={columns}
                 disableRowSelectionOnClick={true}
                 rowSelection={false}
-                initialState={{
-                  pagination: {
-                    paginationModel: { page: 0, pageSize: 25 },
-                  },
-                }}
                 getRowClassName={params =>
                   params.row.state.toLowerCase() == 'success' ? 'current' : ''
                 }

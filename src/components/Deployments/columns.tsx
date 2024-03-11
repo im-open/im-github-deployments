@@ -6,6 +6,7 @@ import {
 } from '@mui/x-data-grid';
 import { Button, Link, Tooltip, Typography } from '@material-ui/core';
 import { DateTime } from 'ts-luxon';
+import { compareVersions } from 'compare-versions';
 import CheckIcon from '@material-ui/icons/Check';
 
 const buttonStyle = { height: '15ox', textTransform: 'none' } as CSSProperties;
@@ -58,9 +59,10 @@ const columnDef = (
     headerName: header,
     type: type,
     sortable: true,
-    filterable: true,
+    filterable: false,
     width: width,
     flex: flex ? 1 : 0,
+    headerAlign: 'left',
   } as GridColDef);
 
 const valueComparator = (a: string, b: string) => {
@@ -98,22 +100,24 @@ const columnWithValueAndLinkDef = (
 
 export const columns: GridColDef[] = [
   {
-    ...columnDef('current', 'Current', 'boolean', 120, false),
+    ...columnDef('current', 'Current', 'boolean', 100, false),
     renderCell: (params: GridRenderCellParams) =>
       params.row.state.toLowerCase() == 'success' ? <CheckIcon /> : '',
     valueGetter: (params: GridValueGetterParams) =>
       params.row.state.toLowerCase() == 'success',
     sortComparator: (a: boolean, b: boolean) => (a == b ? 0 : a ? -1 : 1),
+    filterable: true,
   },
   {
     ...columnWithValueAndLinkDef(
       'displayEnvironment',
       'Environment',
       'string',
-      150,
+      200,
       false,
       (_, params) => `deployments/${params.row.displayEnvironment}`,
     ),
+    filterable: true,
   },
   {
     ...columnWithValueAndLinkDef(
@@ -124,6 +128,7 @@ export const columns: GridColDef[] = [
       true,
       (_, params) => `releases/tag/${params.row.ref}`,
     ),
+    sortComparator: compareVersions,
   },
   {
     ...columnDef('instance', 'Instance', 'string', 250, true),
@@ -138,6 +143,7 @@ export const columns: GridColDef[] = [
       false,
       (_, params) => params.row.payload.workflow_run_url,
     ),
+    filterable: true,
   },
   {
     ...columnDef('created_at', 'Deployed', 'string', 200, false),
@@ -146,11 +152,16 @@ export const columns: GridColDef[] = [
         <Tooltip title={params.row.createdHuman}>
           <Typography variant="body1">
             {DateTime.fromISO(params.row.created_at).toFormat(
-              'MM/dd/yy hh:mm a',
+              'MM/dd/yy HH:mm a',
             )}
           </Typography>
         </Tooltip>
       ),
+    sortComparator: (a: string, b: string) => {
+      const aDate = DateTime.fromISO(a);
+      const bDate = DateTime.fromISO(b);
+      return aDate < bDate ? -1 : aDate > bDate ? 1 : 0;
+    },
   },
   {
     ...columnWithValueAndLinkDef(
@@ -166,5 +177,6 @@ export const columns: GridColDef[] = [
     ),
     valueGetter: (params: GridValueGetterParams) =>
       params.row.payload.workflow_actor ?? params.row.deployed_by,
+    filterable: true,
   },
 ];
