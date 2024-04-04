@@ -19,14 +19,19 @@ export const Deployments = (props: {
   deployments: EnvDeployment[];
   projectSlug: string;
   reloadDashboard: () => void;
+  catalogEnvironments?: string[];
 }) => {
   const { reloadDashboard } = props;
   const [deployments, setDeployments] = useState<EnvDeployment[]>([]);
+  const [catalogEnvironments, setCatalogEnvironments] = useState<
+    string[] | undefined
+  >(undefined);
   const theme = useTheme();
 
   useEffect(() => {
     if (!props.loading) {
       setDeployments(props.deployments);
+      setCatalogEnvironments(props.catalogEnvironments);
     }
   }, [props.loading, props.deployments]);
 
@@ -47,6 +52,7 @@ export const Deployments = (props: {
     [`& .${columnHeaderClass}`]: {
       borderTop: theme.palette.mode === 'dark' ? `2px solid white` : 'none',
       borderBottom: theme.palette.mode === 'dark' ? `2px solid white` : 'none',
+      fontWeight: 'bold',
     },
     [`& .${gridClasses.row}.current`]: {
       backgroundColor: alpha(theme.palette.primary.light, 0.4),
@@ -83,7 +89,7 @@ export const Deployments = (props: {
                 }}
                 loading={props.loading}
                 rows={deployments}
-                columns={columns}
+                columns={columns(catalogEnvironments)}
                 disableRowSelectionOnClick={true}
                 rowSelection={false}
                 getRowClassName={params =>
@@ -95,6 +101,12 @@ export const Deployments = (props: {
                 slotProps={{
                   toolbar: { showQuickFilter: true },
                 }}
+                rowCount={deployments.length}
+                paginationModel={{
+                  page: 0,
+                  pageSize: 25,
+                }}
+                pageSizeOptions={[25]}
               />
             </Grid>
           </Grid>

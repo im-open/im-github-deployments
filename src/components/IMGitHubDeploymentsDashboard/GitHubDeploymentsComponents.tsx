@@ -4,7 +4,7 @@ import useAsyncRetry from 'react-use/lib/useAsyncRetry';
 import { RestDeployment, EnvDeployment } from '../../api/types';
 import { githubDeploymentsApiRef } from '../../api';
 // import { TableDeployments as Deployments } from '../Deployments/TableDeployments';
-import { Deployments } from '../Deployments/Deployments';
+import { Deployments } from '../Deployments';
 import { ResponseErrorPanel } from '@backstage/core-components';
 import { useApi } from '@backstage/core-plugin-api';
 import { Grid } from '@material-ui/core';
@@ -56,7 +56,8 @@ export const GitHubDeploymentsComponents = (props: {
     });
 
     for (var status of apiDeploymentStatuses) {
-      const statusEnvionment = status.environment.replace('*', ''); // TODO: Need to figure out where *'s are coming from
+      // TODO: Need to figure out where *'s are coming from
+      const statusEnvionment = status.environment.replace('*', '');
       const env = getKeyFromList(statusEnvionment, catalogEnvironments);
       const deployment = ghDeployments.filter(
         d => d.node_id == status.deployment_node_id,
@@ -67,12 +68,16 @@ export const GitHubDeploymentsComponents = (props: {
         displayEnvironment: env,
         state: status.state,
         proprojectSlug: projectSlug,
+        current: status.state.toLowerCase() == 'success',
       } as EnvDeployment);
     }
 
     apiDeployments.sort((a, b) => (a.id < b.id ? 1 : -1));
 
-    return apiDeployments;
+    return {
+      apiDeployments: apiDeployments,
+      catalogEnvironments: catalogEnvironments,
+    };
   });
 
   if (error) {
@@ -85,7 +90,8 @@ export const GitHubDeploymentsComponents = (props: {
         <Deployments
           projectSlug={projectSlug}
           loading={loading}
-          deployments={value || []}
+          deployments={value?.apiDeployments || []}
+          catalogEnvironments={value?.catalogEnvironments || []}
           reloadDashboard={reload}
         />
       </Grid>
