@@ -1,13 +1,17 @@
-import React /*, { CSSProperties }*/ from 'react';
-import {
-  GridColDef,
-  GridValueGetterParams,
-  GridRenderCellParams,
-} from '@mui/x-data-grid';
+import React from 'react';
+import { TableColumn } from '@backstage/core-components';
 import { Link, Tooltip, Typography } from '@material-ui/core';
+import { EnvDeployment } from '../../api/types';
 import { DateTime } from 'ts-luxon';
-import { compareVersions } from 'compare-versions';
+import CustomDatePicker from './customDatePicker';
 import CheckIcon from '@material-ui/icons/Check';
+
+type version = {
+  version: string;
+  major: number;
+  minor: number;
+  build: number;
+};
 
 type gitHubContext = {
   server: string;
@@ -15,176 +19,257 @@ type gitHubContext = {
   repo: string;
 };
 
-const renderLink = (
-  workflow_run_url: string,
-  buildLink: (context: gitHubContext) => string,
-  linkText: string,
-) => {
-  const parts = workflow_run_url.split('/');
-  const context = {
-    server: parts[2],
-    owner: parts[3],
-    repo: parts[4],
-  } as gitHubContext;
+class columnFactory {
+  catalogEnvironments: string[];
+  catalogEnvironmentsLower: string[];
 
-  return (
-    <Link href={buildLink(context)} color="primary" target="_blank">
-      {linkText}
-    </Link>
-  );
-};
+  constructor(props: { catalogEnvironments: string[] }) {
+    this.catalogEnvironments = props.catalogEnvironments;
+    this.catalogEnvironmentsLower = this.catalogEnvironments.map(env =>
+      env.toLowerCase(),
+    );
+  }
 
-export const columnHeaderClass = 'deployments-header';
+  getContext(workflow_run_url: string): gitHubContext {
+    const parts = workflow_run_url.split('/');
+    return {
+      server: parts[2],
+      owner: parts[3],
+      repo: parts[4],
+    } as gitHubContext;
+  }
 
-const columnDef = (
-  field: string,
-  header: string,
-  type: string,
-  width: number,
-  flex: boolean,
-) =>
-  ({
-    headerClassName: columnHeaderClass,
-    field: field,
-    headerName: header,
-    type: type,
-    sortable: true,
-    filterable: false,
-    width: width,
-    flex: flex ? 1 : 0,
-    headerAlign: 'left',
-  } as GridColDef);
+  buildLink(url: string, text: string): JSX.Element {
+    return (
+      <Link href={url} color="primary" target="_blank">
+        {text}
+      </Link>
+    );
+  }
 
-const valueComparator = (a: string, b: string) => {
-  if (a == b) return 0;
-  else return a < b ? -1 : 1;
-};
+  vRegEx: RegExp = new RegExp(
+    '(?<major>[0-9]+).(?<minor>[0-9]+).(?<build>[0-9]+)',
+  ); //'^(0|[1-9]\d*)(\.(0|[1-9]\d*)){0,3}');
 
-const columnWithValueAndLinkDef = (
-  field: string,
-  header: string,
-  type: string,
-  width: number,
-  flex: boolean,
-  githubLink: (
-    context: gitHubContext,
-    params: GridRenderCellParams<any, string>,
-  ) => string,
-) =>
-  ({
-    ...columnDef(field, header, type, width, flex),
-    sortComparator: valueComparator,
-    renderCell: (params: GridRenderCellParams<any, string>) =>
-      params.value &&
-      renderLink(
-        params.row.payload.workflow_run_url,
-        context => {
-          const link = githubLink(context, params);
-          return link.toLowerCase().startsWith('http')
-            ? link
-            : `https://${context.server}/${context.owner}/${context.repo}/${link}`;
-        },
-        params.value,
-      ),
-  } as GridColDef);
+  parseVersionString = (versionString: string): version => {
+    const result = this.vRegEx.exec(versionString);
+    if (result) {
+      const [_, major, minor, build] = result;
+      return {
+        version: versionString.toLowerCase().trim(),
+        major: Number.parseInt(major),
+        minor: Number.parseInt(minor),
+        build: Number.parseInt(build),
+      };
+    }
+    return { version: '', major: 0, minor: 0, build: 0 };
+  };
 
-export function columns(catalogEnvironments?: string[]): GridColDef[] {
-  return [
-    {
-      ...columnDef('current', 'Current', 'boolean', 100, false),
-      renderCell: (params: GridRenderCellParams) =>
-        params.row.state.toLowerCase() == 'success' ? <CheckIcon /> : '',
-      valueGetter: (params: GridValueGetterParams) =>
-        params.row.state.toLowerCase() == 'success',
-      sortComparator: (a: boolean, b: boolean) => (a == b ? 0 : a ? -1 : 1),
-      filterable: true,
-    },
-    {
-      ...columnWithValueAndLinkDef(
-        'displayEnvironment',
-        'Environment',
-        'string',
-        200,
-        false,
-        (_, params) => `deployments/${params.row.displayEnvironment}`,
-      ),
-      filterable: true,
-      sortComparator:
-        catalogEnvironments && catalogEnvironments.length > 0
-          ? (a: string, b: string) => {
-              if (a !== b) {
-                for (let i in catalogEnvironments) {
-                  let env = catalogEnvironments[i];
-                  if (a == env) return -1;
-                  if (b == env) return 1;
-                }
-              }
-              return 0;
-            }
-          : valueComparator,
-    },
-    {
-      ...columnWithValueAndLinkDef(
-        'ref',
-        'Tag/Ref',
-        'string',
-        250,
-        true,
-        (_, params) => `releases/tag/${params.row.ref}`,
-      ),
-      sortComparator: compareVersions,
-      filterable: true,
-    },
-    {
-      ...columnDef('instance', 'Instance', 'string', 250, true),
-      valueGetter: (params: GridValueGetterParams) =>
-        params.row.payload.instance,
-      filterable: true,
-    },
-    {
-      ...columnWithValueAndLinkDef(
-        'state',
-        'Status',
-        'string',
-        150,
-        false,
-        (_, params) => params.row.payload.workflow_run_url,
-      ),
-      filterable: true,
-    },
-    {
-      ...columnDef('created_at', 'Deployed', 'string', 200, false),
-      renderCell: (params: GridRenderCellParams) =>
-        params.row.created_at && (
-          <Tooltip title={params.row.createdHuman}>
-            <Typography variant="body1">
-              {DateTime.fromISO(params.row.created_at).toFormat(
-                'MM/dd/yy HH:mm a',
-              )}
-            </Typography>
-          </Tooltip>
-        ),
-      sortComparator: (a: string, b: string) => {
-        const aDate = DateTime.fromISO(a);
-        const bDate = DateTime.fromISO(b);
-        return aDate < bDate ? -1 : aDate > bDate ? 1 : 0;
+  catalogEnvironment(env: string): string {
+    const index = this.catalogEnvironmentsLower.indexOf(env.toLowerCase());
+    if (index >= 0) {
+      return this.catalogEnvironments[index];
+    }
+    return env;
+  }
+
+  catalogEnvironmentSort(envA: string, envB: string): number {
+    let sortVal = 0;
+    const aLower = this.catalogEnvironment(envA).toLowerCase();
+    const bLower = this.catalogEnvironment(envB).toLowerCase();
+
+    if (this.catalogEnvironments.length == 0) {
+      sortVal = aLower < bLower ? -1 : 1;
+    } else {
+      if (aLower !== bLower) {
+        for (let i in this.catalogEnvironments) {
+          const envLower = this.catalogEnvironments[i].toLowerCase();
+          if (aLower == envLower) {
+            sortVal = 1;
+            break;
+          }
+          if (bLower == envLower) {
+            sortVal = -1;
+            break;
+          }
+        }
+      }
+    }
+    return sortVal;
+  }
+
+  createIdColumn(): TableColumn<EnvDeployment> {
+    return {
+      title: 'ID',
+      field: 'id',
+      highlight: false,
+      hidden: true,
+    };
+  }
+
+  createLatestColumn(): TableColumn<EnvDeployment> {
+    return {
+      title: 'Latest',
+      field: 'Latest',
+      highlight: false,
+      width: '100px',
+      render: (row: EnvDeployment) => (row.latest ? <CheckIcon /> : undefined),
+      lookup: {
+        true: '✔',
+        false: undefined,
       },
-    },
-    {
-      ...columnWithValueAndLinkDef(
-        'user',
-        'User',
-        'string',
-        150,
-        false,
-        (context, params) =>
-          `https://${context.server}/${
-            params.row.payload.workflow_actor ?? params.row.deployed_by
-          }`,
+    };
+  }
+
+  createEnvironmentColumn(): TableColumn<EnvDeployment> {
+    return {
+      title: 'Environment',
+      field: 'environment',
+      highlight: false,
+      width: '100px',
+      customSort: (a: EnvDeployment, b: EnvDeployment) =>
+        this.catalogEnvironmentSort(a.environment, b.environment),
+      render: (row: EnvDeployment) => {
+        const env = this.catalogEnvironment(row.environment);
+        const context = this.getContext(row.payload.workflow_run_url as string);
+        const url = `https://${context.server}/${context.owner}/${context.repo}/deployments/${env}`;
+        return this.buildLink(url, env);
+      },
+    };
+  }
+
+  tagRegExp: RegExp = /^(v?\d+(?:\.\d+)*.*)$/g;
+  shaRegExp: RegExp = /\b([0-9a-f]{40})\b/g;
+
+  createTagRefColumn(): TableColumn<EnvDeployment> {
+    return {
+      title: 'Branch/Tag/SHA',
+      field: 'ref',
+      highlight: false,
+      customSort: (a: EnvDeployment, b: EnvDeployment) => {
+        const aVersion = this.parseVersionString(a.ref);
+        const bVersion = this.parseVersionString(b.ref);
+        const versionDiff =
+          aVersion.major - bVersion.major ||
+          aVersion.minor - bVersion.minor ||
+          aVersion.build - bVersion.build;
+
+        if (versionDiff == 0) {
+          if (aVersion.version == bVersion.version) {
+            return 0;
+          } else {
+            return aVersion.version < bVersion.version ? -1 : 1;
+          }
+        } else {
+          return versionDiff;
+        }
+      },
+      render: (row: EnvDeployment) => {
+        const context = this.getContext(row.payload.workflow_run_url as string);
+        const tagTest = this.tagRegExp.exec(row.ref);
+        const shaTest = this.shaRegExp.exec(row.ref);
+
+        //default to branch
+        let url: string = `https://${context.server}/${context.owner}/${context.repo}/tree/${row.ref}`;
+        if (tagTest) {
+          url = `https://${context.server}/${context.owner}/${context.repo}/releases/tag/${row.ref}`;
+        } else if (shaTest) {
+          url = `https://${context.server}/${context.owner}/${context.repo}/commit/${row.ref}`;
+        }
+
+        return this.buildLink(url, row.ref);
+      },
+    };
+  }
+
+  createInstanceColumn(): TableColumn<EnvDeployment> {
+    return {
+      title: 'Instance',
+      field: 'payload.instance',
+      highlight: false,
+    };
+  }
+
+  createStatusColumn(): TableColumn<EnvDeployment> {
+    return {
+      title: 'Status',
+      field: 'state',
+      highlight: false,
+      width: '300px',
+      // These are fixed values that GitHub allows
+      // https://docs.github.com/en/rest/deployments/statuses?apiVersion=2022-11-28#create-a-deployment-status
+      lookup: {
+        SUCCESS: 'SUCCESS',
+        INACTIVE: 'INACTIVE',
+        IN_PROGRESS: 'IN PROGRESS',
+        FAILURE: 'FAILURE',
+        ERROR: 'ERROR',
+        QUEUED: 'QUEUED',
+        PENDING: 'PENDING',
+      },
+      render: (row: EnvDeployment) =>
+        this.buildLink(
+          row.payload.workflow_run_url as string,
+          row.state.toUpperCase(),
+        ),
+    };
+  }
+
+  createDeployedColumn(): TableColumn<EnvDeployment> {
+    return {
+      title: 'Deployed',
+      field: 'created_at',
+      highlight: false,
+      type: 'date',
+      dateSetting: { locale: 'en-US' },
+      customSort: (a: EnvDeployment, b: EnvDeployment) =>
+        a.created_at === b.created_at
+          ? 0
+          : a.created_at < b.created_at
+          ? 1
+          : -1,
+      render: (row: EnvDeployment) => (
+        <Tooltip
+          title={<h2>{row.createdHuman}</h2>}
+          style={{ cursor: 'pointer' }}
+        >
+          <Typography variant="body1">
+            {DateTime.fromISO(row.created_at.toString()).toFormat(
+              'MM/dd/yy hh:mm a (ZZZZ)',
+            )}
+          </Typography>
+        </Tooltip>
       ),
-      valueGetter: (params: GridValueGetterParams) =>
-        params.row.payload.workflow_actor ?? params.row.deployed_by,
-      filterable: true,
-    },
-  ];
+      filterComponent: props => <CustomDatePicker {...props} />,
+    };
+  }
+
+  creataUserColumn(): TableColumn<EnvDeployment> {
+    return {
+      title: 'User',
+      field: 'payload.workflow_actor',
+      render: (row: EnvDeployment) => {
+        const user = row.payload.workflow_actor ?? row.deployed_by;
+        const context = this.getContext(row.payload.workflow_run_url as string);
+        const url = `https://${context.server}/${user}`;
+        return this.buildLink(url, user);
+      },
+    };
+  }
 }
+
+export const deploymentsColumns = (catalogEnvironments: string[]) => {
+  const factory = Object.freeze(
+    new columnFactory({ catalogEnvironments: catalogEnvironments }),
+  );
+
+  return [
+    factory.createLatestColumn(),
+    factory.createEnvironmentColumn(),
+    factory.createTagRefColumn(),
+    factory.createInstanceColumn(),
+    factory.createStatusColumn(),
+    factory.createDeployedColumn(),
+    factory.creataUserColumn(),
+  ];
+};

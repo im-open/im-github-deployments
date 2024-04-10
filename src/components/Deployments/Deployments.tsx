@@ -1,16 +1,10 @@
-import React, { useState, useEffect /*, useRef*/ } from 'react';
+import React, { useState, useEffect } from 'react';
 import { EnvDeployment } from '../../api/types';
-import { InfoCard } from '@backstage/core-components';
-import { Button, Grid /*, Portal*/ } from '@material-ui/core';
-import {
-  DataGrid,
-  GridToolbarContainer,
-  GridToolbarFilterButton,
-  GridToolbarQuickFilter,
-  gridClasses,
-} from '@mui/x-data-grid';
-import { alpha, styled, useTheme } from '@mui/material/styles';
-import { columns, columnHeaderClass } from './columns';
+import { Table } from '@backstage/core-components';
+import { deploymentsColumns } from './columns';
+import FilterAltIcon from '@mui/icons-material/FilterAlt';
+import FilterAltOffIcon from '@mui/icons-material/FilterAltOff';
+import { alpha, useTheme } from '@mui/material/styles';
 import SyncIcon from '@material-ui/icons/Sync';
 
 /** @public */
@@ -19,13 +13,11 @@ export const Deployments = (props: {
   deployments: EnvDeployment[];
   projectSlug: string;
   reloadDashboard: () => void;
-  catalogEnvironments?: string[];
+  catalogEnvironments: string[];
 }) => {
-  const { reloadDashboard } = props;
   const [deployments, setDeployments] = useState<EnvDeployment[]>([]);
-  const [catalogEnvironments, setCatalogEnvironments] = useState<
-    string[] | undefined
-  >(undefined);
+  const [catalogEnvironments, setCatalogEnvironments] = useState<string[]>([]);
+  const [displayFiltering, setDisplayFiltering] = useState<boolean>(false);
   const theme = useTheme();
 
   useEffect(() => {
@@ -35,85 +27,62 @@ export const Deployments = (props: {
     }
   }, [props.loading, props.deployments]);
 
-  const deploymentsToolbar = (props: any) => (
-    <GridToolbarContainer {...props} sx={{ width: '100%', display: 'inline' }}>
-      <div style={{ width: '50%', float: 'left' }}>
-        <GridToolbarFilterButton
-          color={theme.palette.mode === 'dark' ? 'secondary' : 'primary'}
-        />
-      </div>
-      <div style={{ float: 'right', width: '50%', textAlign: 'right' }}>
-        <GridToolbarQuickFilter />
-      </div>
-    </GridToolbarContainer>
-  );
+  const columns = deploymentsColumns(catalogEnvironments);
 
-  const StyledGrid = styled(DataGrid)(({ theme }) => ({
-    [`& .${columnHeaderClass}`]: {
-      borderTop: theme.palette.mode === 'dark' ? `2px solid white` : 'none',
-      borderBottom: theme.palette.mode === 'dark' ? `2px solid white` : 'none',
-      fontWeight: 'bold',
-    },
-    [`& .${gridClasses.row}.current`]: {
-      backgroundColor: alpha(theme.palette.primary.light, 0.4),
-    },
-  })) as typeof DataGrid;
-
-  const displayDeploymentsTitle = `GitHub Deployments (${deployments.length})`;
-  const display = (
-    <InfoCard
-      title={displayDeploymentsTitle}
-      action={
-        <Button
-          onClick={() => reloadDashboard()}
-          variant="outlined"
-          size="small"
+  return (
+    <Table<EnvDeployment>
+      isLoading={props.loading}
+      columns={columns}
+      options={{
+        paging: true,
+        pageSize: 20,
+        actionsColumnIndex: -1,
+        loadingType: 'linear',
+        showEmptyDataSourceMessage: !props.loading,
+        padding: 'dense',
+        pageSizeOptions: [20, 50, 100],
+        filtering: displayFiltering,
+        search: displayFiltering,
+        rowStyle: row =>
+          !row.latest
+            ? {}
+            : {
+                backgroundColor: alpha(theme.palette.primary.light, 0.4),
+              },
+      }}
+      title={`GitHub Deployments (${deployments.length})`}
+      data={deployments}
+      emptyContent={
+        <div
           style={{
-            float: 'right',
+            width: '100%',
+            height: '50px',
+            textAlign: 'center',
+            verticalAlign: 'middle',
           }}
         >
-          <SyncIcon />
-        </Button>
+          <h2 style={{ marginTop: '20px', marginBottom: '20px' }}>
+            No deployments for <code>{props.projectSlug}</code>
+          </h2>
+          <br />
+          <br />
+        </div>
       }
-    >
-      <Grid item sm={12} md={12} lg={12}>
-        <Grid container spacing={3} alignItems="stretch">
-          <Grid item sm={12} md={12} lg={12}>
-            <Grid container spacing={3} alignItems="stretch">
-              <StyledGrid
-                sx={{
-                  boxShadow: 0,
-                  border: 0,
-                  padding: 0,
-                  margin: 0,
-                }}
-                loading={props.loading}
-                rows={deployments}
-                columns={columns(catalogEnvironments)}
-                disableRowSelectionOnClick={true}
-                rowSelection={false}
-                getRowClassName={params =>
-                  params.row.state.toLowerCase() == 'success' ? 'current' : ''
-                }
-                slots={{
-                  toolbar: deploymentsToolbar,
-                }}
-                slotProps={{
-                  toolbar: { showQuickFilter: true },
-                }}
-                rowCount={deployments.length}
-                paginationModel={{
-                  page: 0,
-                  pageSize: 25,
-                }}
-                pageSizeOptions={[25]}
-              />
-            </Grid>
-          </Grid>
-        </Grid>
-      </Grid>
-    </InfoCard>
+      actions={[
+        {
+          icon: () =>
+            displayFiltering ? <FilterAltOffIcon /> : <FilterAltIcon />,
+          tooltip: `Toggle Filter ${displayFiltering ? 'Off' : 'On'}`,
+          isFreeAction: true,
+          onClick: () => setDisplayFiltering(!displayFiltering),
+        },
+        {
+          icon: SyncIcon,
+          tooltip: 'Reload GitHubs Deployment Data',
+          isFreeAction: true,
+          onClick: () => props.reloadDashboard(),
+        },
+      ]}
+    />
   );
-
-  return <>{display}</>;
 };

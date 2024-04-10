@@ -113,9 +113,7 @@ export class GithubDeploymentsApiClient implements GithubDeploymentsApi {
             ref {
               name
             }
-            # This assumes we'll never have more than 100 statuses
-            # per deployment.... which seems pretty safe
-            statuses(first:1) {
+            statuses(first:2) {
               nodes {
                 description
                 state
@@ -142,7 +140,11 @@ export class GithubDeploymentsApiClient implements GithubDeploymentsApi {
       const formatted: RestDeploymentStatus[] = [];
       for (let i = 0; i < d.deployments.length; i++) {
         let deployment = d.deployments[i];
-        let status = deployment.statuses.nodes[0];
+
+        let status = deployment.statuses.nodes.filter(
+          s => s.state.toUpperCase() != 'INACTIVE',
+        )[0];
+
         formatted.push({
           deployment_id: deployment.databaseId,
           deployment_node_id: deployment.id,
