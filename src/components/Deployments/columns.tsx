@@ -110,7 +110,7 @@ class columnFactory {
   createLatestColumn(): TableColumn<EnvDeployment> {
     return {
       title: 'Latest',
-      field: 'Latest',
+      field: 'latest',
       highlight: false,
       width: '100px',
       render: (row: EnvDeployment) => (row.latest ? <CheckIcon /> : undefined),
