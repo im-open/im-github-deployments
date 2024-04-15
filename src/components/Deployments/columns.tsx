@@ -5,13 +5,7 @@ import { EnvDeployment } from '../../api/types';
 import { DateTime } from 'ts-luxon';
 import CustomDatePicker from './customDatePicker';
 import CheckIcon from '@material-ui/icons/Check';
-
-type version = {
-  version: string;
-  major: number;
-  minor: number;
-  build: number;
-};
+import semver from 'semver';
 
 type gitHubContext = {
   server: string;
@@ -46,24 +40,6 @@ class columnFactory {
       </Link>
     );
   }
-
-  vRegEx: RegExp = new RegExp(
-    '(?<major>[0-9]+).(?<minor>[0-9]+).(?<build>[0-9]+)',
-  ); //'^(0|[1-9]\d*)(\.(0|[1-9]\d*)){0,3}');
-
-  parseVersionString = (versionString: string): version => {
-    const result = this.vRegEx.exec(versionString);
-    if (result) {
-      const [_, major, minor, build] = result;
-      return {
-        version: versionString.toLowerCase().trim(),
-        major: Number.parseInt(major),
-        minor: Number.parseInt(minor),
-        build: Number.parseInt(build),
-      };
-    }
-    return { version: '', major: 0, minor: 0, build: 0 };
-  };
 
   catalogEnvironment(env: string): string {
     const index = this.catalogEnvironmentsLower.indexOf(env.toLowerCase());
@@ -138,7 +114,6 @@ class columnFactory {
     };
   }
 
-  tagRegExp: RegExp = /^(v?\d+(?:\.\d+)*.*)$/g;
   shaRegExp: RegExp = /\b([0-9a-f]{40})\b/g;
 
   createTagRefColumn(): TableColumn<EnvDeployment> {
@@ -147,32 +122,32 @@ class columnFactory {
       field: 'ref',
       highlight: false,
       customSort: (a: EnvDeployment, b: EnvDeployment) => {
-        const aVersion = this.parseVersionString(a.ref);
-        const bVersion = this.parseVersionString(b.ref);
-        const versionDiff =
-          aVersion.major - bVersion.major ||
-          aVersion.minor - bVersion.minor ||
-          aVersion.build - bVersion.build;
+        const aTag = semver.parse(a.ref);
+        const bTag = semver.parse(b.ref);
+        let diffValue = 0;
 
-        if (versionDiff == 0) {
-          if (aVersion.version == bVersion.version) {
-            return 0;
-          } else {
-            return aVersion.version < bVersion.version ? -1 : 1;
-          }
+        if (aTag && bTag) {
+          diffValue = semver.eq(aTag, bTag)
+            ? 0
+            : semver.gt(aTag, bTag)
+            ? -1
+            : 1;
         } else {
-          return versionDiff;
+          if (a.ref !== b.ref) {
+            diffValue = a.ref < b.ref ? -1 : 1;
+          }
         }
+        return diffValue;
       },
       render: (row: EnvDeployment) => {
         const context = this.getContext(row.payload.workflow_run_url as string);
-        const tagTest = this.tagRegExp.exec(row.ref);
+        const tagTest = semver.parse(row.ref);
         const shaTest = this.shaRegExp.exec(row.ref);
 
         //default to branch
         let url: string = `https://${context.server}/${context.owner}/${context.repo}/tree/${row.ref}`;
         if (tagTest) {
-          url = `https://${context.server}/${context.owner}/${context.repo}/releases/tag/${row.ref}`;
+          url = `https://${context.server}/${context.owner}/${context.repo}/releases/tag/${tagTest.raw}`;
         } else if (shaTest) {
           url = `https://${context.server}/${context.owner}/${context.repo}/commit/${row.ref}`;
         }

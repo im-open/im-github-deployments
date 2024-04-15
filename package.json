@@ -50,8 +50,8 @@
     "@octokit/graphql": "^5.0.0",
     "@octokit/rest": "^20.0.0",
     "@types/react": "^16.13.1 || ^17.0.0",
-    "compare-versions": "^6.1.0",
     "react-use": "^17.2.4",
+    "semver": "^7.6.0",
     "ts-luxon": "^4.5.1"
   },
   "peerDependencies": {
