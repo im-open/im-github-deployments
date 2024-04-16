@@ -114,7 +114,7 @@ class columnFactory {
     };
   }
 
-  shaRegExp: RegExp = /\b([0-9a-f]{40})\b/g;
+  shaRegExp: RegExp = /^[0-9a-f]{40}$/g;
 
   createTagRefColumn(): TableColumn<EnvDeployment> {
     return {
