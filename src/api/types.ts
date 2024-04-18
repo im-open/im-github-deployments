@@ -13,6 +13,7 @@ export type RestDeployment = {
   created_at: DateTime;
   createdHuman: string | null;
   deployed_by: string;
+  displayEnvironment: string;
   environment: string;
   ref: string;
   payload: {
@@ -25,7 +26,9 @@ export type RestDeployment = {
 
 /** @public */
 export type EnvDeployment = RestDeployment & {
+  [key: string]: any;
   state: string;
+  latest: boolean | undefined;
 };
 
 /** @public */
@@ -54,41 +57,7 @@ export type GraphQlDeployment = {
         description: string;
         state: string;
         createdAt: string;
-      }
+      },
     ];
-  };
-};
-
-/** @public */
-export type EnvState = {
-  environment: string;
-  instance: string;
-  ref: string;
-  status: string;
-  created_at: DateTime;
-  createdHuman: string | null;
-};
-
-type EnvStateKV = {
-  [key: string]: EnvState;
-};
-
-/** @public */
-export type CurrentEnvStates = {
-  [key: string]: EnvStateKV;
-};
-
-/** @public */
-export type TagRef = {
-  id: number;
-  tag: string;
-  created_at: Date;
-  createdHuman: string | null;
-  environment: string;
-  status: string;
-  status_url: string;
-  payload: {
-    instance: string;
-    entity: string;
   };
 };

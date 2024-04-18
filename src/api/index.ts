@@ -1,7 +1,11 @@
 import { Octokit as OctokitRest } from '@octokit/rest';
 import { graphql as OctokitGraphQl } from '@octokit/graphql';
 import { createApiRef, OAuthApi } from '@backstage/core-plugin-api';
-import { RestDeployment, RestDeploymentStatus, GraphQlDeployment } from './types';
+import {
+  RestDeployment,
+  RestDeploymentStatus,
+  GraphQlDeployment,
+} from './types';
 import { DateTime } from 'ts-luxon';
 
 type DeploymentsQueryParams = {
@@ -20,12 +24,12 @@ export interface GithubDeploymentsApi {
   listDeployments(params: DeploymentsQueryParams): Promise<RestDeployment[]>;
 
   listAllDeploymentStatuses(
-    params: AllDeploymentStatusQueryParams
+    params: AllDeploymentStatusQueryParams,
   ): Promise<RestDeploymentStatus[]>;
 }
 
 export const githubDeploymentsApiRef = createApiRef<GithubDeploymentsApi>({
-  id: 'plugin.im-github-deplyments.service'
+  id: 'plugin.im-github-deplyments.service',
 });
 
 export type Options = {
@@ -40,9 +44,12 @@ export class GithubDeploymentsApiClient implements GithubDeploymentsApi {
     this.githubAuthApi = options.githubAuthApi;
   }
 
-  fetchToken = async () => (this.token = await this.githubAuthApi.getAccessToken(['repo']));
+  fetchToken = async () =>
+    (this.token = await this.githubAuthApi.getAccessToken(['repo']));
 
-  async listDeployments(params: DeploymentsQueryParams): Promise<RestDeployment[]> {
+  async listDeployments(
+    params: DeploymentsQueryParams,
+  ): Promise<RestDeployment[]> {
     await this.fetchToken();
     const octokit = new OctokitRest({ auth: this.token });
 
@@ -50,7 +57,7 @@ export class GithubDeploymentsApiClient implements GithubDeploymentsApi {
       owner: params.owner,
       repo: params.repo,
       task: 'workflowdeploy',
-      per_page: params.last
+      per_page: params.last,
     };
 
     const formatDeployments = (d: any) => {
@@ -62,7 +69,7 @@ export class GithubDeploymentsApiClient implements GithubDeploymentsApi {
         task: d.task,
         created_at: d.created_at,
         createdHuman: DateTime.fromISO(d.created_at).toRelative({
-          locale: 'en'
+          locale: 'en',
         }),
         deployed_by: d.creator?.login,
         environment: d.environment,
@@ -71,12 +78,14 @@ export class GithubDeploymentsApiClient implements GithubDeploymentsApi {
           workflow_actor: d.payload?.workflow_actor,
           instance: d.payload?.instance,
           entity: d.payload?.entity,
-          workflow_run_url: d.payload?.workflow_run_url
-        }
+          workflow_run_url: d.payload?.workflow_run_url,
+        },
       } as RestDeployment;
     };
 
-    const restDeployments = (await octokit.paginate(octokit.rest.repos.listDeployments, restParams))
+    const restDeployments = (
+      await octokit.paginate(octokit.rest.repos.listDeployments, restParams)
+    )
       .filter(d => d.task === 'workflowdeploy')
       .map(d => formatDeployments(d))
       .sort((a, b) => (a.id > b.id ? 1 : -1));
@@ -85,13 +94,13 @@ export class GithubDeploymentsApiClient implements GithubDeploymentsApi {
   }
 
   async listAllDeploymentStatuses(
-    params: AllDeploymentStatusQueryParams
+    params: AllDeploymentStatusQueryParams,
   ): Promise<RestDeploymentStatus[]> {
     await this.fetchToken();
     const octokit = OctokitGraphQl.defaults({
       headers: {
-        authorization: `token ${this.token}`
-      }
+        authorization: `token ${this.token}`,
+      },
     });
 
     const statusesQuery = `
@@ -106,7 +115,7 @@ export class GithubDeploymentsApiClient implements GithubDeploymentsApi {
             }
             # This assumes we'll never have more than 100 statuses
             # per deployment.... which seems pretty safe
-            statuses(first:1) {
+            statuses(first:2) {
               nodes {
                 description
                 state
@@ -122,15 +131,26 @@ export class GithubDeploymentsApiClient implements GithubDeploymentsApi {
       deployments: GraphQlDeployment[];
     };
 
-    const statuses: statusesResponse = await octokit<statusesResponse>(statusesQuery, {
-      deploymentNodeIds: params.deploymentNodeIds
-    });
+    const statuses: statusesResponse = await octokit<statusesResponse>(
+      statusesQuery,
+      {
+        deploymentNodeIds: params.deploymentNodeIds,
+      },
+    );
 
     const formatStatuses = (d: statusesResponse) => {
       const formatted: RestDeploymentStatus[] = [];
       for (let i = 0; i < d.deployments.length; i++) {
         let deployment = d.deployments[i];
-        let status = deployment.statuses.nodes[0];
+
+        let noInactiveStatuses = deployment.statuses.nodes.filter(
+          s => s.state.toUpperCase() != 'INACTIVE',
+        );
+        let status =
+          noInactiveStatuses.length > 1
+            ? noInactiveStatuses[0]
+            : deployment.statuses.nodes[0];
+
         formatted.push({
           deployment_id: deployment.databaseId,
           deployment_node_id: deployment.id,
@@ -139,13 +159,13 @@ export class GithubDeploymentsApiClient implements GithubDeploymentsApi {
           ref: deployment.ref.name,
           created_at: DateTime.fromISO(status.createdAt),
           createdHuman: DateTime.fromISO(status.createdAt).toRelative({
-            locale: 'en'
-          })
+            locale: 'en',
+          }),
         } as RestDeploymentStatus);
       }
 
       const formattedStatues = formatted.sort((a, b) =>
-        a.deployment_id < b.deployment_id ? 1 : -1
+        a.deployment_id < b.deployment_id ? 1 : -1,
       );
       return formattedStatues;
     };
