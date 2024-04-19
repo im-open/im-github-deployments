@@ -147,7 +147,7 @@ export class GithubDeploymentsApiClient implements GithubDeploymentsApi {
           s => s.state.toUpperCase() != 'INACTIVE',
         );
         let status =
-          noInactiveStatuses.length > 1
+          noInactiveStatuses.length > 0
             ? noInactiveStatuses[0]
             : deployment.statuses.nodes[0];
 
