@@ -140,6 +140,7 @@ class columnFactory {
         return diffValue;
       },
       render: (row: EnvDeployment) => {
+        const isBlank = !row.ref || row.ref == null || row.ref.trim() == '';
         const context = this.getContext(row.payload.workflow_run_url as string);
         const tagTest = semver.parse(row.ref);
         const shaTest = this.shaRegExp.exec(row.ref);
@@ -152,7 +153,7 @@ class columnFactory {
           url = `https://${context.server}/${context.owner}/${context.repo}/commit/${row.ref}`;
         }
 
-        return this.buildLink(url, row.ref);
+        return isBlank ? 'UNSPECIFIED' : this.buildLink(url, row.ref);
       },
     };
   }
