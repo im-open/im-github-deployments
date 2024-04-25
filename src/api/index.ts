@@ -156,7 +156,7 @@ export class GithubDeploymentsApiClient implements GithubDeploymentsApi {
           deployment_node_id: deployment.id,
           state: status.state,
           environment: deployment.environment,
-          ref: deployment.ref.name,
+          ref: deployment.ref?.name,
           created_at: DateTime.fromISO(status.createdAt),
           createdHuman: DateTime.fromISO(status.createdAt).toRelative({
             locale: 'en',
