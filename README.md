@@ -24,7 +24,15 @@ metadata:
 
 #### 2. `deployment-environments` - OPTIONAL, but recommended
 
-Adding the `metadata.deployment-environments` list allows the dashboard to be pre-populated with the expected deployment environments, and order their appearance in the dashboard.  Otherwise, the deployment environments will be ordered by how they were deployed and may not fully reflect the project deployment lifecycle.
+Adding the `metadata.deployment-environments` list allows the dashboard to be pre-populated with the expected deployment environments, and order their appearance in the dashboard.  Otherwise, the deployment environments will be assumed to be:
+
+- Dev
+- QA
+- Stage
+- UAT
+- Prod
+- Demo
+- Any other environments after this are ordered alphabetically
 
 ```yaml
 apiVersion: backstage.io/v1alpha1
