@@ -39,9 +39,9 @@ export const GitHubDeploymentsComponents = (props: {
     loading,
     retry: reload,
   } = useAsyncRetry(async () => {
-    const catalogEnvironments = entity.metadata[
+    const catalogEnvironments = (entity.metadata[
       'deployment-environments'
-    ] as string[];
+    ] as string[]) || ['Dev', 'QA', 'Stage', 'UAT', 'Prod', 'Demo'];
     const apiDeployments: EnvDeployment[] = [];
     const ghDeployments: RestDeployment[] = await api.listDeployments({
       host,
@@ -105,6 +105,16 @@ export const GitHubDeploymentsComponents = (props: {
     });
 
     apiDeployments.sort((a, b) => (a.id < b.id ? 1 : -1));
+
+    //build display environments for sorting
+    const distinctDeployedEnvironments = Array.from(
+      new Set(
+        apiDeployments
+          .map(m => m.environment)
+          .filter(f => !catalogEnvironments.includes(f)),
+      ),
+    ).sort((a, b) => (a == b ? 0 : a < b ? -1 : 1));
+
     return {
       apiDeployments: apiDeployments.map(d => {
         return {
@@ -118,7 +128,10 @@ export const GitHubDeploymentsComponents = (props: {
             ).length > 0,
         } as EnvDeployment;
       }),
-      catalogEnvironments: catalogEnvironments,
+
+      catalogEnvironments: catalogEnvironments.concat(
+        distinctDeployedEnvironments,
+      ),
     };
   });
 
