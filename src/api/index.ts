@@ -166,7 +166,7 @@ export class GithubDeploymentsApiClient implements GithubDeploymentsApi {
     const page = 100;
     const pages = Math.ceil(params.deploymentNodeIds.length / page);
     const statusRequests = [];
-    const formattedStatues: RestDeploymentStatus[] = [];
+    const formattedStatuses: RestDeploymentStatus[] = [];
 
     for (var i = 0; i < pages; i++) {
       const sliced = params.deploymentNodeIds.slice(i * page, (i + 1) * page);
@@ -179,10 +179,10 @@ export class GithubDeploymentsApiClient implements GithubDeploymentsApi {
 
     await Promise.all(statusRequests).then(response => {
       for (var i = 0; i < response.length; i++) {
-        formattedStatues.push(...formatStatuses(response[i]));
+        formattedStatuses.push(...formatStatuses(response[i]));
       }
     });
 
-    return formattedStatues;
+    return formattedStatuses;
   }
 }
