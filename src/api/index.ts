@@ -131,13 +131,6 @@ export class GithubDeploymentsApiClient implements GithubDeploymentsApi {
       deployments: GraphQlDeployment[];
     };
 
-    const statuses: statusesResponse = await octokit<statusesResponse>(
-      statusesQuery,
-      {
-        deploymentNodeIds: params.deploymentNodeIds,
-      },
-    );
-
     const formatStatuses = (d: statusesResponse) => {
       const formatted: RestDeploymentStatus[] = [];
       for (let i = 0; i < d.deployments.length; i++) {
@@ -170,7 +163,26 @@ export class GithubDeploymentsApiClient implements GithubDeploymentsApi {
       return formattedStatues;
     };
 
-    const formatted = formatStatuses(statuses);
-    return formatted;
+    const page = 100;
+    const pages = Math.ceil(params.deploymentNodeIds.length / page);
+    const statusRequests = [];
+    const formattedStatues: RestDeploymentStatus[] = [];
+
+    for (var i = 0; i < pages; i++) {
+      const sliced = params.deploymentNodeIds.slice(i * page, (i + 1) * page);
+      statusRequests.push(
+        await octokit<statusesResponse>(statusesQuery, {
+          deploymentNodeIds: sliced,
+        }),
+      );
+    }
+
+    await Promise.all(statusRequests).then(response => {
+      for (var i = 0; i < response.length; i++) {
+        formattedStatues.push(...formatStatuses(response[i]));
+      }
+    });
+
+    return formattedStatues;
   }
 }
