@@ -157,10 +157,9 @@ export class GithubDeploymentsApiClient implements GithubDeploymentsApi {
         } as RestDeploymentStatus);
       }
 
-      const formattedStatuses = formatted.sort((a, b) =>
+      return formatted.sort((a, b) =>
         a.deployment_id < b.deployment_id ? 1 : -1,
       );
-      return formattedStatuses;
     };
 
     const page = 100;
