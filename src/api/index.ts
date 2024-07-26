@@ -136,25 +136,27 @@ export class GithubDeploymentsApiClient implements GithubDeploymentsApi {
       for (let i = 0; i < d.deployments.length; i++) {
         let deployment = d.deployments[i];
 
-        let noInactiveStatuses = deployment.statuses.nodes.filter(
-          s => s.state.toUpperCase() != 'INACTIVE',
-        );
-        let status =
-          noInactiveStatuses.length > 0
-            ? noInactiveStatuses[0]
-            : deployment.statuses.nodes[0];
+        if (deployment.statuses.nodes.length > 0) {
+          let noInactiveStatuses = deployment.statuses.nodes.filter(
+            s => s.state.toUpperCase() != 'INACTIVE',
+          );
+          let status =
+            noInactiveStatuses.length > 0
+              ? noInactiveStatuses[0]
+              : deployment.statuses.nodes[0];
 
-        formatted.push({
-          deployment_id: deployment.databaseId,
-          deployment_node_id: deployment.id,
-          state: status.state,
-          environment: deployment.environment,
-          ref: deployment.ref?.name,
-          created_at: DateTime.fromISO(status.createdAt),
-          createdHuman: DateTime.fromISO(status.createdAt).toRelative({
-            locale: 'en',
-          }),
-        } as RestDeploymentStatus);
+          formatted.push({
+            deployment_id: deployment.databaseId,
+            deployment_node_id: deployment.id,
+            state: status.state,
+            environment: deployment.environment,
+            ref: deployment.ref?.name,
+            created_at: DateTime.fromISO(status.createdAt),
+            createdHuman: DateTime.fromISO(status.createdAt).toRelative({
+              locale: 'en',
+            }),
+          } as RestDeploymentStatus);
+        }
       }
 
       return formatted.sort((a, b) =>
