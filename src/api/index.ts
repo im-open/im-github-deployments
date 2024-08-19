@@ -88,6 +88,7 @@ export class GithubDeploymentsApiClient implements GithubDeploymentsApi {
     )
       .filter(d => d.task === 'workflowdeploy')
       .map(d => formatDeployments(d))
+      .filter(d => d.payload.entity === params.entity)
       .sort((a, b) => (a.id > b.id ? 1 : -1));
 
     return restDeployments;
